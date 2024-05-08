@@ -14,6 +14,11 @@ pydantic = "*"
 pillow = "*"
 imagehash = "*"
 uvicorn = {extras = ["standard"], version = "*"}
+requests = "*"
+flask-sqlalchemy = "*"
+pinecone-client = "*"
+google-cloud-storage = "*"
+python-dotenv = "*"
 
 [dev-packages]
 

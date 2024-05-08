@@ -1,45 +1,25 @@
-import logging
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from PIL import Image, ImageFile
-from dataclasses import dataclass
-import io
+from database import db
+import logging
 
-from utils import apply_phashes
+logging.basicConfig(level=logging.INFO)
 
-# https://github.com/python-pillow/Pillow/issues/1510
-ImageFile.LOAD_TRUNCATED_IMAGES = True
+def create_app():
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+    db.init_app(app)
+    CORS(app)
 
-app = Flask(__name__)
-CORS(app)
+    from routes import main
+    app.register_blueprint(main)
 
+    with app.app_context():
+        db.create_all()
 
-@dataclass
-class PerceptualHashes:
-    blockhash: str
-    neuralhash: str
-    colourhash: str
+    return app
 
-
-@app.route("/process_image", methods=["POST"])
-def process_image():
-    if "file" not in request.files:
-        return jsonify(error="No file part"), 400
-    file = request.files["file"]
-    if file.filename == "":
-        return jsonify(error="No selected file"), 400
-    if file:
-        try:
-            image_data = file.read()
-            image = Image.open(io.BytesIO(image_data))
-            hashes = apply_phashes(image)
-            # Validate output with dataclass
-            perceptual_hashes_for_image = PerceptualHashes(**hashes)
-            return jsonify(perceptual_hashes_for_image.__dict__)
-        except Exception as e:
-            return jsonify(error=str(e)), 400
-
+app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(port=8080, debug=True)
